@@ -8,3 +8,11 @@ body {
   width: 100hw;
   height: 100vh;
 }
+
+.dropdown-container { 
+  position: absolute;
+  z-index: 100;
+  border: 1px solid red;
+  padding: .5rem;
+  background: lightgray;
+}
