@@ -9,6 +9,7 @@ const Map = () => {
   const [usStates, setUsStates] = useState([])
   const [geoJSON, setgeoJSON] = useState(null)
   const [selectedUsState, setSelectedUsState] = useState(null)
+  const [csvUrl, setCsvUrl] = useState('')
 
   useEffect(() => {
 
@@ -90,17 +91,14 @@ const Map = () => {
 
   }, [])
 
-  useEffect(() => {
-
-    console.log('selectedUsState', selectedUsState)
-
-  }, [selectedUsState])
-
   const makeQuery = (event) => {
 
     console.log('makeQuery')
 
-    if(!selectedUsState) return
+    if(!selectedUsState || !csvUrl) {
+      alert('Please select a U.S. state and enter a url to a valid csv source.')
+      return
+    }
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
@@ -139,6 +137,8 @@ const Map = () => {
     setSelectedUsState(stateMatch)
   }
 
+  const csvUrlChange = event => setCsvUrl(event.target.value)
+
   return (
     <div ref={mapContainer} className="map-container">
       <div className="ui-container">
@@ -155,7 +155,7 @@ const Map = () => {
         </div>
         <div className="ui-row">
           <label htmlFor='csv-url' >Source:</label>
-          <input type='text' id='csv-url' placeholder="URL source of the CSV"></input>
+          <input type='text' onChange={(event) => { csvUrlChange(event) }} id='csv-url' placeholder="URL source of the CSV" value={csvUrl} ></input>
         </div>
         <div className="ui-row">
           <button onClick={(event) => { makeQuery(event) }}>Query!</button>
