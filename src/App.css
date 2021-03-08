@@ -3,16 +3,25 @@ body {
   padding: 0;
 }
 
+label {
+  display: block;
+}
+
 .map-container { 
   position: absolute;
   width: 100hw;
   height: 100vh;
 }
 
-.dropdown-container { 
+.ui-container { 
   position: absolute;
   z-index: 100;
-  border: 1px solid red;
+  border: 1px solid darkgray;
   padding: .5rem;
   background: lightgray;
+}
+
+.ui-row {
+  /* border: 1px solid red; */
+  padding-top: .4rem;
 }
