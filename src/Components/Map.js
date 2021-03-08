@@ -7,7 +7,7 @@ const Map = () => {
   const mapContainer = useRef(null)
   const [statefulMap, setMap] = useState(null)
   const [usStates, setUsStates] = useState([])
-  const [geoJSON, setgeoJSON] = useState(null)
+  const [geoJSON, setgeoJSON] = useState()
   const [selectedUsState, setSelectedUsState] = useState(null)
   const [csvUrl, setCsvUrl] = useState('')
 
@@ -157,6 +157,11 @@ const Map = () => {
         </div>
         <div className="ui-row">
           <button onClick={(event) => { makeQuery(event) }}>Query!</button>
+        </div>
+        <div className="ui-row">
+          <label htmlFor='geojson' >GeoJSON:</label>
+          <textarea id='geojson' value={ JSON.stringify(geoJSON) } readOnly={ true }></textarea>
+          <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(geoJSON))}>copy</button></div>
         </div>
       </div>
     </div>
