@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
-const Map = ({}) => {
+const Map = () => {
 
   const mapContainer = useRef(null)
   const [statefulMap, setMap] = useState(null)
-  const [states, setStates] = useState([])
+  const [usStates, setUsStates] = useState([])
   const [geoJSON, setgeoJSON] = useState(null)
-  const [selectedState, setSelectedState] = useState(null)
+  const [selectedUsState, setSelectedUsState] = useState(null)
 
   useEffect(() => {
 
@@ -39,8 +39,8 @@ const Map = ({}) => {
     else {
       if(geoJSON) {
 
+        //remove any previous state data, if present
         if (statefulMap.getLayer('aoi-layer')) statefulMap.removeLayer('aoi-layer')
-
         if (statefulMap.getSource('aoi')) statefulMap.removeSource('aoi')
         
         statefulMap.addSource('aoi', {
@@ -48,41 +48,65 @@ const Map = ({}) => {
           data: geoJSON
         })
 
+        const maxPersonPerPoint = geoJSON.features.reduce((acc, feature) => {
+          if(feature.properties.persons_per_point > acc) acc = feature.properties.persons_per_point
+          return acc
+        }, 0)
+
+        console.log('maxPersonPerPoint', maxPersonPerPoint)
+
         statefulMap.addLayer({
           id: 'aoi-layer',
           source: 'aoi',
-          type: 'fill'
+          type: 'fill',
+          paint: {
+            'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'persons_per_point'],
+            0,
+            '#c7e9c0',
+            maxPersonPerPoint,
+            '#006d2c'
+            ],
+            'fill-opacity': 0.75
+          }
         })
       }
     }
 
   }, [statefulMap, geoJSON])
 
+  //populate states
   useEffect(() => {
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
       .then((res) => {
         res.json()
-          .then(states => setStates(states))
+          .then(usStates => setUsStates(usStates))
           .catch(error => console.log('error', error))
       })
       .catch(error => console.log('error', error))
 
-    }, [])
-  
-  const stateChange = (event) => {
-    
-    //console.log('event.target.value', event.target.value)
-    const stateAbbrev = event.target.value
-    const stateMatch = states.find((state) => state.stusps === stateAbbrev)
+  }, [])
 
-    setSelectedState(stateMatch)
+  useEffect(() => {
+
+    console.log('selectedUsState', selectedUsState)
+
+  }, [selectedUsState])
+
+  const makeQuery = (event) => {
+
+    console.log('makeQuery')
+
+    if(!selectedUsState) return
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
       body: JSON.stringify({
         "csvUrl": "https://gist.githubusercontent.com/FergusDevelopmentLLC/b95090d5c494ced48a1610c3e954a382/raw/1ef9f8c9819554ab103aebd35fa93f0e63593b34/animal_hospitals_usa.csv",
-        "stusps": event.target.value,
+        "stusps": selectedUsState.stusps,
         "data_description": "test data"
       })
     })
@@ -93,13 +117,12 @@ const Map = ({}) => {
           
           let zoom = 6
 
-          if(stateMatch.stusps === 'CA') zoom = 5
-          if(stateMatch.stusps === 'TX') zoom = 5
-          if(stateMatch.stusps === 'AK') zoom = 4
+          if(selectedUsState.stusps === 'CA') zoom = 5
+          if(selectedUsState.stusps === 'TX') zoom = 5
+          if(selectedUsState.stusps === 'AK') zoom = 4
           
-
           statefulMap.flyTo({
-            center: [stateMatch.centroid_longitude, stateMatch.centroid_latitude],
+            center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
             zoom: zoom,
             essential: true
           })
@@ -107,19 +130,36 @@ const Map = ({}) => {
         .catch(error => console.log('error', error))
     })
     .catch(error => console.log('error', error))
+
+  }
+
+  const usStateChange = (event) => {
+    const stateAbbrev = event.target.value
+    const stateMatch = usStates.find((usState) => usState.stusps === stateAbbrev)
+    setSelectedUsState(stateMatch)
   }
 
   return (
     <div ref={mapContainer} className="map-container">
-      <div className="dropdown-container">
-        <select onChange={(event) => { stateChange(event) }} >
-          <option>-Select state-</option>
-          {
-            states.map((state, i)=> {
-              return <option key={i} value={ state.stusps }>{ state.name }</option>
-            })
-          }
-        </select>
+      <div className="ui-container">
+        <div className="ui-row">
+          <label htmlFor='state' >U.S. State:</label>
+          <select id='state' onChange={(event) => { usStateChange(event) }} >
+            <option>-Select state-</option>
+            {
+              usStates.map((usState, i)=> {
+                return <option key={i} value={ usState.stusps }>{ usState.name }</option>
+              })
+            }
+          </select>
+        </div>
+        <div className="ui-row">
+          <label htmlFor='csv-url' >Source:</label>
+          <input type='text' id='csv-url' placeholder="URL source of the CSV"></input>
+        </div>
+        <div className="ui-row">
+          <button onClick={(event) => { makeQuery(event) }}>Query!</button>
+        </div>
       </div>
     </div>
   )
