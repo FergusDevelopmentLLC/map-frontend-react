@@ -40,25 +40,37 @@ const Map = () => {
     else {
       if(geoJSON) {
 
-        //remove any previous state data, if present
-        if (statefulMap.getLayer('aoi-layer')) statefulMap.removeLayer('aoi-layer')
-        if (statefulMap.getSource('aoi')) statefulMap.removeSource('aoi')
+        let counties = { ...geoJSON }
+        counties.features = counties.features.filter(feature => feature.geometry.type === "MultiPolygon")
         
-        statefulMap.addSource('aoi', {
+        let points = { ...geoJSON }
+        points.features = points.features.filter(feature => feature.geometry.type === "Point")
+
+        //remove any previous state data, if present
+        if (statefulMap.getLayer('aoi-counties-layer')) statefulMap.removeLayer('aoi-counties-layer')
+        if (statefulMap.getSource('aoi-source-counties')) statefulMap.removeSource('aoi-source-counties')
+
+        if (statefulMap.getLayer('aoi-points-layer')) statefulMap.removeLayer('aoi-points-layer')
+        if (statefulMap.getSource('aoi-source-points')) statefulMap.removeSource('aoi-source-points')
+        
+        statefulMap.addSource('aoi-source-counties', {
           type: 'geojson',
-          data: geoJSON
+          data: counties
         })
 
-        const maxPersonPerPoint = geoJSON.features.reduce((acc, feature) => {
+        statefulMap.addSource('aoi-source-points', {
+          type: 'geojson',
+          data: points
+        })
+        
+        const maxPersonPerPoint = counties.features.reduce((acc, feature) => {
           if(feature.properties.persons_per_point > acc) acc = feature.properties.persons_per_point
           return acc
         }, 0)
 
-        console.log('maxPersonPerPoint', maxPersonPerPoint)
-
         statefulMap.addLayer({
-          id: 'aoi-layer',
-          source: 'aoi',
+          id: 'aoi-counties-layer',
+          source: 'aoi-source-counties',
           type: 'fill',
           paint: {
             'fill-color': [
@@ -72,6 +84,12 @@ const Map = () => {
             ],
             'fill-opacity': 0.75
           }
+        })
+
+        statefulMap.addLayer({
+          id: 'aoi-points-layer',
+          source: 'aoi-source-points',
+          type: 'circle'
         })
       }
     }
@@ -157,6 +175,7 @@ const Map = () => {
         </div>
         <div className="ui-row">
           <button onClick={(event) => { makeQuery(event) }}>Query!</button>
+          <button onClick={(event) => { setCsvUrl('https://gist.githubusercontent.com/FergusDevelopmentLLC/b95090d5c494ced48a1610c3e954a382/raw/1ef9f8c9819554ab103aebd35fa93f0e63593b34/animal_hospitals_usa.csv')}}>Use sample data</button>
         </div>
         <div className="ui-row">
           <label htmlFor='geojson' >GeoJSON:</label>
