@@ -93,8 +93,6 @@ const Map = () => {
 
   const makeQuery = (event) => {
 
-    console.log('makeQuery')
-
     if(!selectedUsState || !csvUrl) {
       alert('Please select a U.S. state and enter a url to a valid csv source.')
       return
