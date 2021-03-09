@@ -169,7 +169,7 @@ const Map = () => {
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
       body: JSON.stringify({
-        "csvUrl": "https://gist.githubusercontent.com/FergusDevelopmentLLC/b95090d5c494ced48a1610c3e954a382/raw/1ef9f8c9819554ab103aebd35fa93f0e63593b34/animal_hospitals_usa.csv",
+        "csvUrl": csvUrl,
         "stusps": selectedUsState.stusps,
         "data_description": "test data"
       })
