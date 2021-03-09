@@ -16,6 +16,20 @@ const Map = () => {
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
 
+  //populate states
+  useEffect(() => {
+
+    fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
+      .then((res) => {
+        res.json()
+          .then(usStates => setUsStates(usStates))
+          .catch(error => console.log('error', error))
+      })
+      .catch(error => console.log('error', error))
+
+  }, [])
+
+  //initialize map
   useEffect(() => {
 
     const initializeMap = () => {
@@ -41,112 +55,118 @@ const Map = () => {
       setMap(mapboxGlMap)
     }
 
-    console.log('statefulMap', statefulMap)
-
     if (!statefulMap) {
       initializeMap()
     }
-    else {
-      if(geoJSON) {
+   
 
-        let counties = { ...geoJSON }
-        counties.features = counties.features.filter(feature => feature.geometry.type === "MultiPolygon")
-        
-        let points = { ...geoJSON }
-        points.features = points.features.filter(feature => feature.geometry.type === "Point")
+  }, [statefulMap])
 
-        //remove any previous state data, if present
-        if (statefulMap.getLayer('aoi-counties-layer')) statefulMap.removeLayer('aoi-counties-layer')
-        if (statefulMap.getSource('aoi-source-counties')) statefulMap.removeSource('aoi-source-counties')
-
-        if (statefulMap.getLayer('aoi-points-layer')) statefulMap.removeLayer('aoi-points-layer')
-        if (statefulMap.getSource('aoi-source-points')) statefulMap.removeSource('aoi-source-points')
-        
-        statefulMap.addSource('aoi-source-counties', {
-          type: 'geojson',
-          data: counties
-        })
-
-        statefulMap.addSource('aoi-source-points', {
-          type: 'geojson',
-          data: points
-        })
-        
-        const maxPersonPerPoint = counties.features.reduce((acc, feature) => {
-          if(feature.properties.persons_per_point > acc) acc = feature.properties.persons_per_point
-          return acc
-        }, 0)
-
-        statefulMap.addLayer({
-          id: 'aoi-counties-layer',
-          source: 'aoi-source-counties',
-          type: 'fill',
-          paint: {
-            'fill-color': [
-            'interpolate',
-            ['linear'],
-            ['get', 'persons_per_point'],
-            0,
-            '#c7e9c0',
-            maxPersonPerPoint,
-            '#006d2c'
-            ],
-            'fill-opacity': 0.75
-          }
-        })
-
-        statefulMap.addLayer({
-          id: 'aoi-points-layer',
-          source: 'aoi-source-points',
-          type: 'circle',
-          paint: {
-            'circle-radius': 3,
-            'circle-color': '#223b53',
-            'circle-stroke-color': 'white',
-            'circle-stroke-width': 1,
-            'circle-opacity': 0.5
-          }
-        })
-
-        
-      }
-
-      if(stateGeoJSON) {
-
-        if (statefulMap.getLayer('aoi-state-layer')) statefulMap.removeLayer('aoi-state-layer')
-        if (statefulMap.getSource('aoi-source-state')) statefulMap.removeSource('aoi-source-state')
-        
-        statefulMap.addSource('aoi-source-state', {
-          type: 'geojson',
-          data: stateGeoJSON
-        })
-
-        statefulMap.addLayer({
-          id: 'aoi-state-layer',
-          source: 'aoi-source-state',
-          type: 'fill',
-          paint: {
-            'fill-opacity': 0.75
-          }
-        })
-       
-      }
-    }
-
-  }, [statefulMap, geoJSON, stateGeoJSON])
-
-  //populate states
+  //populate map with counties
   useEffect(() => {
 
-    fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
-      .then((res) => {
-        res.json()
-          .then(usStates => setUsStates(usStates))
-          .catch(error => console.log('error', error))
-      })
-      .catch(error => console.log('error', error))
+    if(geoJSON && statefulMap) {
 
-  }, [])
+      console.log('geoJSON', geoJSON)
+      
+      let counties = { ...geoJSON }
+      counties.features = counties.features.filter(feature => {
+        return feature.geometry && feature.geometry.type === "MultiPolygon"
+      })
+      
+      console.log('counties', counties)
+
+      let points = { ...geoJSON }
+      points.features = points.features.filter(feature => {
+        return feature.geometry && feature.geometry.type === "Point"
+      })
+
+      console.log('points', points)
+
+      //remove any previous state data, if present
+      if (statefulMap.getLayer('aoi-counties-layer')) statefulMap.removeLayer('aoi-counties-layer')
+      if (statefulMap.getSource('aoi-source-counties')) statefulMap.removeSource('aoi-source-counties')
+
+      if (statefulMap.getLayer('aoi-points-layer')) statefulMap.removeLayer('aoi-points-layer')
+      if (statefulMap.getSource('aoi-source-points')) statefulMap.removeSource('aoi-source-points')
+      
+      statefulMap.addSource('aoi-source-counties', {
+        type: 'geojson',
+        data: counties
+      })
+
+      statefulMap.addSource('aoi-source-points', {
+        type: 'geojson',
+        data: points
+      })
+      
+      const maxPersonPerPoint = counties.features.reduce((acc, feature) => {
+        if(feature.properties.persons_per_point > acc) acc = feature.properties.persons_per_point
+        return acc
+      }, 0)
+
+      statefulMap.addLayer({
+        id: 'aoi-counties-layer',
+        source: 'aoi-source-counties',
+        type: 'fill',
+        paint: {
+          'fill-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'persons_per_point'],
+          0,
+          '#c7e9c0',
+          maxPersonPerPoint,
+          '#006d2c'
+          ],
+          'fill-opacity': 0.75
+        }
+      })
+
+      statefulMap.addLayer({
+        id: 'aoi-points-layer',
+        source: 'aoi-source-points',
+        type: 'circle',
+        paint: {
+          'circle-radius': 3,
+          'circle-color': '#223b53',
+          'circle-stroke-color': 'white',
+          'circle-stroke-width': 1,
+          'circle-opacity': 0.5
+        }
+      })
+    }
+
+  }, [geoJSON, statefulMap])
+
+  //show state outline
+  useEffect(() => {
+
+    if(stateGeoJSON && statefulMap) {
+
+      console.log('stateGeoJSON', stateGeoJSON)
+      
+      if (statefulMap.getLayer('aoi-state-layer')) statefulMap.removeLayer('aoi-state-layer')
+      if (statefulMap.getSource('aoi-source-state')) statefulMap.removeSource('aoi-source-state')
+
+      console.log('here2', stateGeoJSON)
+      
+      statefulMap.addSource('aoi-source-state', {
+        type: 'geojson',
+        data: JSON.stringify(stateGeoJSON)
+      })
+
+      statefulMap.addLayer({
+        id: 'aoi-state-layer',
+        source: 'aoi-source-state',
+        type: 'fill',
+        paint: {
+          'fill-opacity': 0.75
+        }
+      })
+
+    }
+  }, [stateGeoJSON, statefulMap])
 
   const makeQuery = (event) => {
 
