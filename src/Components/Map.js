@@ -22,7 +22,9 @@ const Map = () => {
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
       .then((res) => {
         res.json()
-          .then(usStates => setUsStates(usStates))
+          .then(usStates => {
+            setUsStates(usStates)
+          })
           .catch(error => console.log('error', error))
       })
       .catch(error => console.log('error', error))
@@ -44,13 +46,9 @@ const Map = () => {
         attributionControl: false
       })
 
-      mapboxGlMap.on("load", () => {
-        console.log('map load')
-      })
+      //mapboxGlMap.on("load", () => console.log('map load'))
 
-      mapboxGlMap.on('moveend', () => {
-        setLoading(false)
-      })
+      mapboxGlMap.on('moveend', () =>  setLoading(false))
 
       setMap(mapboxGlMap)
     }
@@ -67,21 +65,15 @@ const Map = () => {
 
     if(geoJSON && statefulMap) {
 
-      console.log('geoJSON', geoJSON)
-      
       let counties = { ...geoJSON }
       counties.features = counties.features.filter(feature => {
         return feature.geometry && feature.geometry.type === "MultiPolygon"
       })
       
-      console.log('counties', counties)
-
       let points = { ...geoJSON }
       points.features = points.features.filter(feature => {
         return feature.geometry && feature.geometry.type === "Point"
       })
-
-      console.log('points', points)
 
       //remove any previous state data, if present
       if (statefulMap.getLayer('aoi-counties-layer')) statefulMap.removeLayer('aoi-counties-layer')
@@ -144,28 +136,25 @@ const Map = () => {
 
     if(stateGeoJSON && statefulMap) {
 
-      console.log('stateGeoJSON', stateGeoJSON)
-      
       if (statefulMap.getLayer('aoi-state-layer')) statefulMap.removeLayer('aoi-state-layer')
       if (statefulMap.getSource('aoi-source-state')) statefulMap.removeSource('aoi-source-state')
 
-      console.log('here2', stateGeoJSON)
-      
       statefulMap.addSource('aoi-source-state', {
         type: 'geojson',
-        data: JSON.stringify(stateGeoJSON)
+        data: stateGeoJSON
       })
 
       statefulMap.addLayer({
         id: 'aoi-state-layer',
         source: 'aoi-source-state',
-        type: 'fill',
+        type: 'line',
         paint: {
-          'fill-opacity': 0.75
+          'line-color': '#355e92',
+          'line-width': 3
         }
       })
-
     }
+
   }, [stateGeoJSON, statefulMap])
 
   const makeQuery = (event) => {
@@ -177,21 +166,6 @@ const Map = () => {
     
     setLoading(true)
 
-    fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
-      .then((res) => {
-        res.json()
-          .then(geojson => {
-            console.log('geojson', geojson)
-            setStateGeoJSON(JSON.stringify(geojson))
-          })
-          .catch((error) => {
-            console.log('error', error)
-          })
-      })
-      .catch((error) => {
-        console.log('error', error)
-      })
-
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
       body: JSON.stringify({
@@ -202,26 +176,40 @@ const Map = () => {
     })
     .then((res) => {
       res.json()
-        .then(geojson => {
-          setgeoJSON(geojson)
-          
-          let zoom = 6
+        .then(geojson => setgeoJSON(geojson))
+          .then(() => {
 
-          if(selectedUsState.stusps === 'CA') zoom = 5
-          if(selectedUsState.stusps === 'TX') zoom = 5
-          if(selectedUsState.stusps === 'AK') zoom = 4
-          
-          statefulMap.flyTo({
-            center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
-            zoom: zoom,
-            essential: true
+            fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
+              .then((res) => {
+                res.json()
+                  .then(geojson => {
+                    
+                    setStateGeoJSON(geojson)
+
+                    let zoom = 6
+                    if(selectedUsState.stusps === 'CA') zoom = 5
+                    if(selectedUsState.stusps === 'TX') zoom = 5
+                    if(selectedUsState.stusps === 'AK') zoom = 4
+
+                    statefulMap.flyTo({
+                      center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
+                      zoom: zoom,
+                      essential: true
+                    })
+
+                  })
+                  .catch((error) => {
+                    console.log('error', error)
+                  })
+              })
+              .catch((error) => {
+                console.log('error', error)
+              })
           })
-          
-        })
+          .catch(error => console.log('error', error))
         .catch(error => console.log('error', error))
     })
     .catch(error => console.log('error', error))
-
   }
 
   const usStateChange = (stateAbbrev) => {
@@ -231,11 +219,8 @@ const Map = () => {
 
   const csvUrlChange = event => setCsvUrl(event.target.value)
 
-  const override = `
-    display: block;
-    margin: .75rem auto;
-    width: 180px;
-  `
+  const barLoaderOverride = `display: block; margin: .75rem auto; width: 180px;`
+
   return (
     <div ref={mapContainer} className="map-container">
       <div className="ui-container">
@@ -264,7 +249,7 @@ const Map = () => {
         <div className="ui-row">
           <button onClick={(event) => { makeQuery(event) }}>Query!</button>
         </div>
-        { loading ? <div className="ui-row"><BarLoader color={barColor} loading={loading} css={override} /></div> : null }
+        { loading ? <div className="ui-row"><BarLoader color={ barColor } loading={ loading } css={ barLoaderOverride } /></div> : null }
         {
           !loading && geoJSON
           ? 
