@@ -16,7 +16,8 @@ label {
 .ui-container { 
   position: absolute;
   z-index: 100;
-  border: 1px solid darkgray;
+  border-right: 1px solid darkgray;
+  border-bottom: 1px solid darkgray;
   padding: .5rem;
   background: lightgray;
 }
@@ -27,6 +28,6 @@ label {
 }
 
 .csvUrl-input {
-  max-width: 8rem;
-  margin-right: .5rem;
+  max-width: 5rem;
+  margin-right: .25rem;
 }
