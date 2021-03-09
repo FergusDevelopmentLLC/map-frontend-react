@@ -9,6 +9,7 @@ const Map = () => {
   const [statefulMap, setMap] = useState(null)
   const [usStates, setUsStates] = useState([])
   const [geoJSON, setgeoJSON] = useState()
+  const [stateGeoJSON, setStateGeoJSON] = useState()
   const [selectedUsState, setSelectedUsState] = useState(null)
   const [csvUrl, setCsvUrl] = useState('')
 
@@ -109,9 +110,30 @@ const Map = () => {
 
         
       }
+
+      if(stateGeoJSON) {
+
+        if (statefulMap.getLayer('aoi-state-layer')) statefulMap.removeLayer('aoi-state-layer')
+        if (statefulMap.getSource('aoi-source-state')) statefulMap.removeSource('aoi-source-state')
+        
+        statefulMap.addSource('aoi-source-state', {
+          type: 'geojson',
+          data: stateGeoJSON
+        })
+
+        statefulMap.addLayer({
+          id: 'aoi-state-layer',
+          source: 'aoi-source-state',
+          type: 'fill',
+          paint: {
+            'fill-opacity': 0.75
+          }
+        })
+       
+      }
     }
 
-  }, [statefulMap, geoJSON])
+  }, [statefulMap, geoJSON, stateGeoJSON])
 
   //populate states
   useEffect(() => {
@@ -134,6 +156,21 @@ const Map = () => {
     }
     
     setLoading(true)
+
+    fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
+      .then((res) => {
+        res.json()
+          .then(geojson => {
+            console.log('geojson', geojson)
+            setStateGeoJSON(JSON.stringify(geojson))
+          })
+          .catch((error) => {
+            console.log('error', error)
+          })
+      })
+      .catch((error) => {
+        console.log('error', error)
+      })
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
@@ -201,7 +238,7 @@ const Map = () => {
                 usStateChange('CA')
                 setCsvUrl('https://gist.githubusercontent.com/FergusDevelopmentLLC/3ae03a54f78bce4717e04618615091c2/raw/b208e1de1dfd458ec7ed185c4491169c998b2d9c/animal_hospitals_ca_trunc.csv')
               }}>
-              sample
+              sample data
           </button>
         </div>
         <div className="ui-row">
