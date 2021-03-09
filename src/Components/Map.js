@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import BarLoader from "react-spinners/BarLoader";
+import BarLoader from "react-spinners/BarLoader"
+import jenks from 'turf-jenks'
 
 const Map = () => {
 
@@ -92,29 +93,35 @@ const Map = () => {
         data: points
       })
       
-      const maxPersonPerPoint = counties.features.reduce((acc, feature) => {
-        if(feature.properties.persons_per_point > acc) acc = feature.properties.persons_per_point
-        return acc
-      }, 0)
+      const colors = ['#f7fcf5','#c9eac2','#7bc77c','#2a924b','#00441b']
+      const breaks = jenks(counties,'persons_per_point', colors.length)
+
+      let breaksInsert = []
+      for (let i = 1; i < colors.length; i++) {
+        breaksInsert.push(`${breaks[i]},"${colors[i]}"`)
+      }
+      
+      const countyPaint = `
+      {
+        "fill-color": [
+        "interpolate",
+        ["linear"],
+        ["get", "persons_per_point"],
+        0,
+        "${colors[0]}",
+        ${breaksInsert.join(',')}
+        ],
+        "fill-opacity": 0.75,
+        "fill-outline-color": "#1f3c84"
+      }`.trim()
 
       statefulMap.addLayer({
         id: 'aoi-counties-layer',
         source: 'aoi-source-counties',
         type: 'fill',
-        paint: {
-          'fill-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'persons_per_point'],
-          0,
-          '#c7e9c0',
-          maxPersonPerPoint,
-          '#006d2c'
-          ],
-          'fill-opacity': 0.75
-        }
+        paint: JSON.parse(countyPaint)
       })
-
+      
       statefulMap.addLayer({
         id: 'aoi-points-layer',
         source: 'aoi-source-points',
