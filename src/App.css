@@ -25,3 +25,8 @@ label {
   /* border: 1px solid red; */
   padding-top: .4rem;
 }
+
+.csvUrl-input {
+  max-width: 8rem;
+  margin-right: .5rem;
+}
