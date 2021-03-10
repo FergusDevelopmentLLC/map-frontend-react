@@ -7,6 +7,10 @@ label {
   display: block;
 }
 
+label.checkbox-label {
+  display: inline-block;
+}
+
 .map-container { 
   position: absolute;
   width: 100hw;
@@ -27,8 +31,21 @@ label {
   padding-top: .4rem;
 }
 
-.csvUrl-input {
+.points-counties-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.points-counties-row div {
+  margin-right: .5rem;
+}
+
+/* .csvUrl-input {
   max-width: 5rem;
+  margin-right: .25rem;
+} */
+
+.btn-query {
   margin-right: .25rem;
 }
 

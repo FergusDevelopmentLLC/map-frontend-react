@@ -14,11 +14,16 @@ const Map = () => {
   const [countyCentroidsGeoJSON, setCountyCentroidsGeoJSON] = useState()
   
   const [selectedUsState, setSelectedUsState] = useState(null)
+  
   const [csvUrl, setCsvUrl] = useState('')
+  const [dataDescription, setDataDescription] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
   
+  const [showPoints, setShowPoints] = useState(true)
+  const [showCounties, setShowCounties] = useState(true)
+
   //populate states for the dropdown
   useEffect(() => {
 
@@ -301,6 +306,47 @@ const Map = () => {
     }
   }, [countyCentroidsGeoJSON, statefulMap])
 
+  //watch for show/hide points
+  useEffect(() => {
+
+    if(statefulMap) {
+
+      let pointsLayer = statefulMap.getLayer('aoi-points-layer')
+
+      if(pointsLayer) {
+        if (showPoints === false)
+          statefulMap.setLayoutProperty('aoi-points-layer', 'visibility', 'none')
+        else 
+          statefulMap.setLayoutProperty('aoi-points-layer', 'visibility', 'visible')
+      }
+    }
+  }, [showPoints, statefulMap])
+
+  //watch for show/hide counties
+  useEffect(() => {
+
+    if(statefulMap) {
+
+      let countiesLayer = statefulMap.getLayer('aoi-counties-layer')
+      let countiesCentroidsLayer = statefulMap.getLayer('aoi-county-centroid-layer')
+      
+      if(countiesLayer) {
+        if (showCounties === false) {
+          statefulMap.setLayoutProperty('aoi-counties-layer', 'visibility', 'none')
+          
+          if(countiesCentroidsLayer) 
+            statefulMap.setLayoutProperty('aoi-county-centroid-layer', 'visibility', 'none')
+        }
+        else {
+          statefulMap.setLayoutProperty('aoi-counties-layer', 'visibility', 'visible')
+
+          if(countiesCentroidsLayer) 
+            statefulMap.setLayoutProperty('aoi-county-centroid-layer', 'visibility', 'visible')
+        }
+      }
+    }
+  }, [showCounties, statefulMap])
+
   const queryAPI = (event) => {
 
     if(!selectedUsState || !csvUrl) {
@@ -339,8 +385,6 @@ const Map = () => {
     setCountiesPointsGeoJSON(null)
   }
 
-  const csvUrlChange = event => setCsvUrl(event.target.value)
-
   const barLoaderOverride = `display: block; margin: .75rem auto; width: 180px;`
 
   return (
@@ -360,26 +404,48 @@ const Map = () => {
         </div>
         <div className="ui-row">
           <label htmlFor='csv-url' >Source:</label>
-          <input type='text' onChange={(event) => { csvUrlChange(event) }} id='csv-url' placeholder="URL source of the CSV" value={csvUrl} className='csvUrl-input' ></input>
+          <input type='text' onChange={(event) => { setCsvUrl(event.target.value) }} id='csv-url' placeholder="URL source of the CSV" value={csvUrl} className='csvUrl-input' ></input>
+        </div>
+        <div className="ui-row">
+          <label htmlFor='data-description' >Data description:</label>
+          <input type='text' onChange={(event) => { setDataDescription(event.target.value) }} id='data-description' placeholder="Short description of data" value={dataDescription} ></input>
+        </div>
+        <div className="ui-row">
+          <button onClick={(event) => { queryAPI(event) }} className='btn-query'>Query!</button>
           <button 
             onClick={(event) => { 
                 usStateChange('CA')
                 setCsvUrl('https://gist.githubusercontent.com/FergusDevelopmentLLC/2d2ef2fe6bf41bb7f10cb7a87efbb803/raw/1aaea6621e64892fd1fc9642bb14a729c892ffe8/animal_hospitals_ca.csv')
+                setDataDescription('Animal hospitals in CA')
               }}>
-              sample data
+              Try sample data
           </button>
-        </div>
-        <div className="ui-row">
-          <button onClick={(event) => { queryAPI(event) }}>Query!</button>
         </div>
         { loading ? <div className="ui-row"><BarLoader color={ barColor } loading={ loading } css={ barLoaderOverride } /></div> : null }
         {
           !loading && countiesPointsGeoJSON
-          ? 
-          <div className="ui-row">
-            <label htmlFor='geojson' >GeoJSON:</label>
-            <textarea id='geojson' value={ JSON.stringify(countiesPointsGeoJSON) } readOnly={ true }></textarea>
-            <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(countiesPointsGeoJSON))}>copy</button></div>
+          ?
+          <div>
+            <div className="ui-row">
+              <label htmlFor='geojson' >GeoJSON:</label>
+              <textarea id='geojson' value={ JSON.stringify(countiesPointsGeoJSON) } readOnly={ true }></textarea>
+              <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(countiesPointsGeoJSON))}>copy</button></div>
+            </div>
+            <div className="ui-row">
+              <div id='points-counties' className="points-counties-row">
+                <div>
+                  <label className="checkbox-label" htmlfor="show-points">
+                    <input type="checkbox" id="show-points" name="points" checked={ showPoints ? `checked` : ''} onChange={(event) => { setShowPoints(event.target.checked) }} />points
+                  </label>
+                </div>
+                <div>
+                  <label className="checkbox-label" htmlfor="show-counties">
+                    <input type="checkbox" id="show-counties" name="counties" checked={ showCounties ? `checked` : ''} onChange={(event) => { setShowCounties(event.target.checked) }} />counties
+                  </label>
+                </div>
+              </div>
+              
+            </div>
           </div>
           :
           null
