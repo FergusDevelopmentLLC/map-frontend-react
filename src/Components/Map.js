@@ -327,8 +327,15 @@ const Map = () => {
   }
 
   const usStateChange = (stateAbbrev) => {
-    const stateMatch = usStates.find((usState) => usState.stusps === stateAbbrev)
-    setSelectedUsState(stateMatch)
+    if(stateAbbrev === 'all') {
+      setSelectedUsState({
+        "stusps": "all"
+      })
+    }
+    else {
+      const stateMatch = usStates.find((usState) => usState.stusps === stateAbbrev)
+      setSelectedUsState(stateMatch)
+    }
     setCountiesPointsGeoJSON(null)
   }
 
@@ -343,6 +350,7 @@ const Map = () => {
           <label htmlFor='state' >U.S. State:</label>
           <select id='state' onChange={(event) => { usStateChange(event.target.value) }} value={ selectedUsState ? selectedUsState.stusps : '' } >
             <option value=''>-Select state-</option>
+            {/* <option value='all'>All</option> */}
             {
               usStates.map((usState, i)=> {
                 return <option key={i} value={ usState.stusps }>{ usState.name }</option>
