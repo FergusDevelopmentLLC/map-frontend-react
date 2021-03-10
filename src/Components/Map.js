@@ -11,12 +11,15 @@ const Map = () => {
   const [usStates, setUsStates] = useState([])
   const [geoJSON, setgeoJSON] = useState()
   const [stateGeoJSON, setStateGeoJSON] = useState()
+  const [countyCentroidsGeoJSON, setCountyCentroidsGeoJSON] = useState()
+  
   const [selectedUsState, setSelectedUsState] = useState(null)
   const [csvUrl, setCsvUrl] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
 
+  
   //populate states
   useEffect(() => {
 
@@ -46,8 +49,6 @@ const Map = () => {
         zoom: 3,
         attributionControl: false
       })
-
-      //mapboxGlMap.on("load", () => console.log('map load'))
 
       mapboxGlMap.on('moveend', () =>  setLoading(false))
 
@@ -135,7 +136,6 @@ const Map = () => {
         }
       })
     }
-
   }, [geoJSON, statefulMap])
 
   //show state outline
@@ -164,6 +164,57 @@ const Map = () => {
 
   }, [stateGeoJSON, statefulMap])
 
+  //show invisble county centroids, used for showing popup
+  useEffect(() => {
+    
+    // Create a popup, but don't add it to the map yet.
+    const popup = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false
+    })
+
+    if(countyCentroidsGeoJSON && statefulMap) {
+
+      if (statefulMap.getLayer('aoi-county-centroid-layer')) statefulMap.removeLayer('aoi-county-centroid-layer')
+      if (statefulMap.getSource('aoi-source-county-centroid')) statefulMap.removeSource('aoi-source-county-centroid')
+
+      statefulMap.addSource('aoi-source-county-centroid', {
+        type: 'geojson',
+        data: countyCentroidsGeoJSON
+      })
+
+      statefulMap.addLayer({
+        id: 'aoi-county-centroid-layer',
+        source: 'aoi-source-county-centroid',
+        type: 'circle',
+        paint: {
+          'circle-radius': 15,
+          'circle-opacity': 0
+        }
+      })
+
+      statefulMap.on('mouseenter', 'aoi-county-centroid-layer', (e) => {
+
+        statefulMap.getCanvas().style.cursor = 'pointer'
+        
+        let coordinates = e.features[0].geometry.coordinates
+        
+        let html = `<label class='popupHeader' for='popup'>County details:</label><ul id='popup' class='popup'>`
+        for (const [key, value] of Object.entries(e.features[0].properties)) {
+          html += `<li>${key}: ${value}</li>`
+        }
+        html += `</ul>`
+        popup.setLngLat(coordinates).setHTML(html).addTo(statefulMap)
+  
+      })
+  
+      statefulMap.on('mouseleave', 'aoi-county-centroid-layer', () => {
+        statefulMap.getCanvas().style.cursor = ''
+        popup.remove()
+      })
+    }
+  }, [countyCentroidsGeoJSON, statefulMap])
+
   const makeQuery = (event) => {
 
     if(!selectedUsState || !csvUrl) {
@@ -172,6 +223,8 @@ const Map = () => {
     }
     
     setLoading(true)
+
+    let g
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
@@ -183,28 +236,58 @@ const Map = () => {
     })
     .then((res) => {
       res.json()
-        .then(geojson => setgeoJSON(geojson))
+        .then(geojson => {
+          setgeoJSON(geojson)
+          g = geojson
+        })
           .then(() => {
-
             fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
               .then((res) => {
                 res.json()
-                  .then(geojson => {
-                    
-                    setStateGeoJSON(geojson)
+                  .then(stateBorderline => setStateGeoJSON(stateBorderline))
+                    .then(() => {
+                      fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/counties/${selectedUsState.stusps}`)
+                        .then((res) => {
+                          res.json()
+                            .then((countyCentroids) => {
 
-                    let zoom = 6
-                    if(selectedUsState.stusps === 'CA') zoom = 5
-                    if(selectedUsState.stusps === 'TX') zoom = 5
-                    if(selectedUsState.stusps === 'AK') zoom = 4
+                              countyCentroids.features.forEach((centroid) => {
+                                let match = g.features.find((feature) => {
+                                  return feature.properties.countyfp === centroid.properties.countyfp
+                                })
+                                if(match) {
+                                  centroid.properties = {
+                                    ...centroid.properties,
+                                    ...match.properties
+                                  }
+                                }
+                              })
 
-                    statefulMap.flyTo({
-                      center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
-                      zoom: zoom,
-                      essential: true
+                              setCountyCentroidsGeoJSON(countyCentroids)
+
+                              let zoom = 6
+                              if(selectedUsState.stusps === 'CA') zoom = 5
+                              if(selectedUsState.stusps === 'TX') zoom = 5
+                              if(selectedUsState.stusps === 'AK') zoom = 4
+
+                              statefulMap.flyTo({
+                                center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
+                                zoom: zoom,
+                                essential: true
+                              })
+                            
+                            })
+                            .catch((error) => {
+                              console.log('error', error)
+                            })
+                        .catch((error) => {
+                          console.log('error', error)
+                        })
+                      })
                     })
-
-                  })
+                    .catch((error) => {
+                      console.log('error', error)
+                    })
                   .catch((error) => {
                     console.log('error', error)
                   })
