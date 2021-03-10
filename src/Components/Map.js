@@ -290,10 +290,17 @@ const Map = () => {
         
         let coordinates = e.features[0].geometry.coordinates
         
-        let html = `<label class='popupHeader' for='popup'>County details:</label><ul id='popup' class='popup'>`
-        for (const [key, value] of Object.entries(e.features[0].properties)) {
-          html += `<li>${key}: ${value}</li>`
-        }
+        let html = `<ul id='popup' class='popup'>`
+        const columnsToDisplay = ['name', 'pop_2019', 'geo_points_count', 'persons_per_point']
+        const columnNames = ['county', 'pop 2019', 'points_count', 'persons_per_point']
+
+        columnsToDisplay.forEach((column, i) => {
+          if(columnNames[i] === 'county')
+            html += `<li><strong>${e.features[0].properties[column]} County</strong></li>`
+          else
+            html += `<li>${columnNames[i]}: ${e.features[0].properties[column].toLocaleString()}</li>`
+        })
+
         html += `</ul>`
         popup.setLngLat(coordinates).setHTML(html).addTo(statefulMap)
   
@@ -349,8 +356,8 @@ const Map = () => {
 
   const queryAPI = (event) => {
 
-    if(!selectedUsState || !csvUrl) {
-      alert('Please select a U.S. state and enter a url to a valid csv source.')
+    if(!selectedUsState || !csvUrl || !dataDescription) {
+      alert('Please select a U.S. state, a url to a valid csv source and a short description of your data.')
       return
     }
     
@@ -434,12 +441,12 @@ const Map = () => {
             <div className="ui-row">
               <div id='points-counties' className="points-counties-row">
                 <div>
-                  <label className="checkbox-label" htmlfor="show-points">
+                  <label className="checkbox-label" htmlFor="show-points">
                     <input type="checkbox" id="show-points" name="points" checked={ showPoints ? `checked` : ''} onChange={(event) => { setShowPoints(event.target.checked) }} />points
                   </label>
                 </div>
                 <div>
-                  <label className="checkbox-label" htmlfor="show-counties">
+                  <label className="checkbox-label" htmlFor="show-counties">
                     <input type="checkbox" id="show-counties" name="counties" checked={ showCounties ? `checked` : ''} onChange={(event) => { setShowCounties(event.target.checked) }} />counties
                   </label>
                 </div>
