@@ -18,7 +18,6 @@ const Map = () => {
 
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
-
   
   //populate states
   useEffect(() => {
@@ -66,6 +65,12 @@ const Map = () => {
   useEffect(() => {
 
     if(geoJSON && statefulMap) {
+      
+      // Create a popup, but don't add it to the map yet.
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false
+      })
 
       let counties = { ...geoJSON }
       counties.features = counties.features.filter(feature => {
@@ -112,7 +117,7 @@ const Map = () => {
         "${colors[0]}",
         ${breaksInsert.join(',')}
         ],
-        "fill-opacity": 0.75,
+        "fill-opacity": 0.6,
         "fill-outline-color": "#1f3c84"
       }`.trim()
 
@@ -128,13 +133,34 @@ const Map = () => {
         source: 'aoi-source-points',
         type: 'circle',
         paint: {
-          'circle-radius': 3,
-          'circle-color': '#223b53',
-          'circle-stroke-color': 'white',
+          'circle-radius': 2,
+          'circle-color': 'orange',
+          'circle-stroke-color': 'red',
           'circle-stroke-width': 1,
-          'circle-opacity': 0.5
+          'circle-opacity': 0.75
         }
       })
+
+      statefulMap.on('mouseenter', 'aoi-points-layer', (e) => {
+
+        statefulMap.getCanvas().style.cursor = 'pointer'
+        
+        let coordinates = e.features[0].geometry.coordinates
+        
+        let html = `<label class='popupHeader' for='popup'>Location details:</label><ul id='popup' class='popup'>`
+        for (const [key, value] of Object.entries(e.features[0].properties)) {
+          html += `<li>${key}: ${value}</li>`
+        }
+        html += `</ul>`
+        popup.setLngLat(coordinates).setHTML(html).addTo(statefulMap)
+  
+      })
+  
+      statefulMap.on('mouseleave', 'aoi-points-layer', () => {
+        statefulMap.getCanvas().style.cursor = ''
+        popup.remove()
+      })
+
     }
   }, [geoJSON, statefulMap])
 
