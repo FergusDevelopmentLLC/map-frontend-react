@@ -22,10 +22,13 @@ const Map = () => {
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
   
+  const apiPrefix = 'https://8450cseuue.execute-api.us-east-1.amazonaws.com/production'
+  //const apiPrefix = 'http://localhost:3000/production'
+
   //populate states for the dropdown
   useEffect(() => {
 
-    fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
+    fetch(`${apiPrefix}/states`)
       .then((res) => {
         res.json()
           .then(usStates => {
@@ -68,12 +71,12 @@ const Map = () => {
     
     const fetchStateBorderAndCountyCentroids = () => {
 
-      fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
+      fetch(`${apiPrefix}/states/${selectedUsState.stusps}`)
         .then((res) => {
           res.json()
             .then(stateBorderline => setStateGeoJSON(stateBorderline))
               .then(() => {
-                fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/counties/${selectedUsState.stusps}`)
+                fetch(`${apiPrefix}/counties/${selectedUsState.stusps}`)
                   .then((res) => {
                     res.json()
                       .then((countyCentroids) => {
@@ -361,7 +364,7 @@ const Map = () => {
     
     setLoading(true)
 
-    fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
+    fetch(`${apiPrefix}/getGeoJsonForCsv`,{
       method: 'POST',
       body: JSON.stringify({
         "csvUrl": csvUrl,
