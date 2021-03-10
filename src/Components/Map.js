@@ -1,6 +1,6 @@
+import "mapbox-gl/dist/mapbox-gl.css"
 import React, { useEffect, useRef, useState } from "react"
 import mapboxgl from "mapbox-gl"
-import "mapbox-gl/dist/mapbox-gl.css"
 import BarLoader from "react-spinners/BarLoader"
 import jenks from 'turf-jenks'
 
@@ -14,16 +14,14 @@ const Map = () => {
   const [countyCentroidsGeoJSON, setCountyCentroidsGeoJSON] = useState()
   
   const [selectedUsState, setSelectedUsState] = useState(null)
-  
   const [csvUrl, setCsvUrl] = useState('')
   const [dataDescription, setDataDescription] = useState('')
+  const [showPoints, setShowPoints] = useState(true)
+  const [showCounties, setShowCounties] = useState(true)
 
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
   
-  const [showPoints, setShowPoints] = useState(true)
-  const [showCounties, setShowCounties] = useState(true)
-
   //populate states for the dropdown
   useEffect(() => {
 
