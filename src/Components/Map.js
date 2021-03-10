@@ -356,7 +356,7 @@ const Map = () => {
           <button 
             onClick={(event) => { 
                 usStateChange('CA')
-                setCsvUrl('https://gist.githubusercontent.com/FergusDevelopmentLLC/3ae03a54f78bce4717e04618615091c2/raw/b208e1de1dfd458ec7ed185c4491169c998b2d9c/animal_hospitals_ca_trunc.csv')
+                setCsvUrl('https://gist.githubusercontent.com/FergusDevelopmentLLC/2d2ef2fe6bf41bb7f10cb7a87efbb803/raw/1aaea6621e64892fd1fc9642bb14a729c892ffe8/animal_hospitals_ca.csv')
               }}>
               sample data
           </button>
