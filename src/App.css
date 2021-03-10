@@ -31,3 +31,16 @@ label {
   max-width: 5rem;
   margin-right: .25rem;
 }
+
+.popup {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.popupHeader {
+  font-weight: bold;
+}
+/* .popup li {
+  border: 1px solid black;
+} */
