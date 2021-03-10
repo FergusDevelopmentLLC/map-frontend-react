@@ -9,7 +9,7 @@ const Map = () => {
   const mapContainer = useRef(null)
   const [statefulMap, setMap] = useState(null)
   const [usStates, setUsStates] = useState([])
-  const [geoJSON, setgeoJSON] = useState()
+  const [countiesPointsGeoJSON, setCountiesPointsGeoJSON] = useState()
   const [stateGeoJSON, setStateGeoJSON] = useState()
   const [countyCentroidsGeoJSON, setCountyCentroidsGeoJSON] = useState()
   
@@ -62,21 +62,82 @@ const Map = () => {
 
   //populate map with counties
   useEffect(() => {
+    
+    const fetchStateBorderAndCountyCentroids = () => {
 
-    if(geoJSON && statefulMap) {
+      fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
+        .then((res) => {
+          res.json()
+            .then(stateBorderline => setStateGeoJSON(stateBorderline))
+              .then(() => {
+                fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/counties/${selectedUsState.stusps}`)
+                  .then((res) => {
+                    res.json()
+                      .then((countyCentroids) => {
+  
+                        //merge the county polygon data (persons_per_point, etc)
+                        countyCentroids.features.forEach((centroid) => {
+                          let match = countiesPointsGeoJSON.features.find((feature) => {
+                            return feature.properties.countyfp === centroid.properties.countyfp
+                          })
+                          if(match) {
+                            centroid.properties = {
+                              ...centroid.properties,
+                              ...match.properties
+                            }
+                          }
+                        })
+  
+                        setCountyCentroidsGeoJSON(countyCentroids)
+  
+                        let zoom = 6
+                        if(selectedUsState.stusps === 'CA') zoom = 5
+                        if(selectedUsState.stusps === 'TX') zoom = 5
+                        if(selectedUsState.stusps === 'AK') zoom = 4
+  
+                        statefulMap.flyTo({
+                          center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
+                          zoom: zoom,
+                          essential: true
+                        })
+                      
+                      })
+                      .catch((error) => {
+                        console.log('error', error)
+                      })
+                  .catch((error) => {
+                    console.log('error', error)
+                  })
+                })
+              })
+              .catch((error) => {
+                console.log('error', error)
+              })
+            .catch((error) => {
+              console.log('error', error)
+            })
+        })
+        .catch((error) => {
+          console.log('error', error)
+        })
+    }
+
+    if(countiesPointsGeoJSON && statefulMap) {
       
+      fetchStateBorderAndCountyCentroids()
+
       // Create a popup, but don't add it to the map yet.
       const popup = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false
       })
 
-      let counties = { ...geoJSON }
+      let counties = { ...countiesPointsGeoJSON }
       counties.features = counties.features.filter(feature => {
         return feature.geometry && feature.geometry.type === "MultiPolygon"
       })
       
-      let points = { ...geoJSON }
+      let points = { ...countiesPointsGeoJSON }
       points.features = points.features.filter(feature => {
         return feature.geometry && feature.geometry.type === "Point"
       })
@@ -161,7 +222,7 @@ const Map = () => {
       })
 
     }
-  }, [geoJSON, statefulMap])
+  }, [countiesPointsGeoJSON, statefulMap, selectedUsState])
 
   //show state outline
   useEffect(() => {
@@ -240,7 +301,7 @@ const Map = () => {
     }
   }, [countyCentroidsGeoJSON, statefulMap])
 
-  const makeQuery = (event) => {
+  const queryAPI = (event) => {
 
     if(!selectedUsState || !csvUrl) {
       alert('Please select a U.S. state and enter a url to a valid csv source.')
@@ -248,8 +309,6 @@ const Map = () => {
     }
     
     setLoading(true)
-
-    let g
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/getGeoJsonForCsv",{
       method: 'POST',
@@ -261,67 +320,7 @@ const Map = () => {
     })
     .then((res) => {
       res.json()
-        .then(geojson => {
-          setgeoJSON(geojson)
-          g = geojson
-        })
-          .then(() => {
-            fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states/${selectedUsState.stusps}`)
-              .then((res) => {
-                res.json()
-                  .then(stateBorderline => setStateGeoJSON(stateBorderline))
-                    .then(() => {
-                      fetch(`https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/counties/${selectedUsState.stusps}`)
-                        .then((res) => {
-                          res.json()
-                            .then((countyCentroids) => {
-
-                              countyCentroids.features.forEach((centroid) => {
-                                let match = g.features.find((feature) => {
-                                  return feature.properties.countyfp === centroid.properties.countyfp
-                                })
-                                if(match) {
-                                  centroid.properties = {
-                                    ...centroid.properties,
-                                    ...match.properties
-                                  }
-                                }
-                              })
-
-                              setCountyCentroidsGeoJSON(countyCentroids)
-
-                              let zoom = 6
-                              if(selectedUsState.stusps === 'CA') zoom = 5
-                              if(selectedUsState.stusps === 'TX') zoom = 5
-                              if(selectedUsState.stusps === 'AK') zoom = 4
-
-                              statefulMap.flyTo({
-                                center: [selectedUsState.centroid_longitude, selectedUsState.centroid_latitude],
-                                zoom: zoom,
-                                essential: true
-                              })
-                            
-                            })
-                            .catch((error) => {
-                              console.log('error', error)
-                            })
-                        .catch((error) => {
-                          console.log('error', error)
-                        })
-                      })
-                    })
-                    .catch((error) => {
-                      console.log('error', error)
-                    })
-                  .catch((error) => {
-                    console.log('error', error)
-                  })
-              })
-              .catch((error) => {
-                console.log('error', error)
-              })
-          })
-          .catch(error => console.log('error', error))
+        .then(countiesPoints => setCountiesPointsGeoJSON(countiesPoints))
         .catch(error => console.log('error', error))
     })
     .catch(error => console.log('error', error))
@@ -330,6 +329,7 @@ const Map = () => {
   const usStateChange = (stateAbbrev) => {
     const stateMatch = usStates.find((usState) => usState.stusps === stateAbbrev)
     setSelectedUsState(stateMatch)
+    setCountiesPointsGeoJSON(null)
   }
 
   const csvUrlChange = event => setCsvUrl(event.target.value)
@@ -362,16 +362,16 @@ const Map = () => {
           </button>
         </div>
         <div className="ui-row">
-          <button onClick={(event) => { makeQuery(event) }}>Query!</button>
+          <button onClick={(event) => { queryAPI(event) }}>Query!</button>
         </div>
         { loading ? <div className="ui-row"><BarLoader color={ barColor } loading={ loading } css={ barLoaderOverride } /></div> : null }
         {
-          !loading && geoJSON
+          !loading && countiesPointsGeoJSON
           ? 
           <div className="ui-row">
             <label htmlFor='geojson' >GeoJSON:</label>
-            <textarea id='geojson' value={ JSON.stringify(geoJSON) } readOnly={ true }></textarea>
-            <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(geoJSON))}>copy</button></div>
+            <textarea id='geojson' value={ JSON.stringify(countiesPointsGeoJSON) } readOnly={ true }></textarea>
+            <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(countiesPointsGeoJSON))}>copy</button></div>
           </div>
           :
           null
