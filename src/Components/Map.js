@@ -19,7 +19,7 @@ const Map = () => {
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
   
-  //populate states
+  //populate states for the dropdown
   useEffect(() => {
 
     fetch("https://8450cseuue.execute-api.us-east-1.amazonaws.com/production/states")
@@ -57,8 +57,7 @@ const Map = () => {
     if (!statefulMap) {
       initializeMap()
     }
-   
-
+  
   }, [statefulMap])
 
   //populate map with counties
