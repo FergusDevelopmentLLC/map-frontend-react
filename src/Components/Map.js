@@ -361,7 +361,7 @@ const Map = () => {
       body: JSON.stringify({
         "csvUrl": csvUrl,
         "stusps": selectedUsState.stusps,
-        "data_description": "test data"
+        "data_description": dataDescription
       })
     })
     .then((res) => {
