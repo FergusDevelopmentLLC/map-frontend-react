@@ -7,6 +7,7 @@ import jenks from 'turf-jenks'
 const Map = () => {
 
   const mapContainer = useRef(null)
+  
   const [statefulMap, setMap] = useState(null)
   const [usStates, setUsStates] = useState([])
   const [countiesPointsGeoJSON, setCountiesPointsGeoJSON] = useState()
