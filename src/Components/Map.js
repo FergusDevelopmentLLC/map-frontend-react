@@ -399,7 +399,7 @@ const Map = () => {
     <div ref={mapContainer} className="map-container">
       <div className="ui-container">
         <div className="ui-row">
-          <label htmlFor='state' >U.S. State:</label>
+          <label htmlFor='state' >U.S. State of interest:</label>
           <select id='state' onChange={(event) => { usStateChange(event.target.value) }} value={ selectedUsState ? selectedUsState.stusps : '' } >
             <option value=''>-Select state-</option>
             {/* <option value='all'>All</option> */}
@@ -411,7 +411,7 @@ const Map = () => {
           </select>
         </div>
         <div className="ui-row">
-          <label htmlFor='csv-url' >Source:</label>
+          <label htmlFor='csv-url' >CSV source url:</label>
           <input type='text' onChange={(event) => { setCsvUrl(event.target.value) }} id='csv-url' placeholder="URL source of the CSV" value={csvUrl} className='csvUrl-input' ></input>
         </div>
         <div className="ui-row">
@@ -435,9 +435,7 @@ const Map = () => {
           ?
           <div>
             <div className="ui-row">
-              <label htmlFor='geojson' >GeoJSON:</label>
-              <textarea id='geojson' value={ JSON.stringify(countiesPointsGeoJSON) } readOnly={ true }></textarea>
-              <div><button onClick={() =>  navigator.clipboard.writeText(JSON.stringify(countiesPointsGeoJSON))}>copy</button></div>
+              <div><button onClick={() => navigator.clipboard.writeText(JSON.stringify(countiesPointsGeoJSON))}>copy GeoJSON</button></div>
             </div>
             <div className="ui-row">
               <div id='points-counties' className="points-counties-row">
