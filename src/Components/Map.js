@@ -23,7 +23,7 @@ const Map = () => {
   const [loading, setLoading] = useState(false)
   const [barColor, setBarColor] = useState("#20b2aa")
   
-  const apiPrefix = 'https://8450cseuue.execute-api.us-east-1.amazonaws.com/production'
+  const apiPrefix = 'https://tukrsrpa30.execute-api.us-east-1.amazonaws.com/production/'
   //const apiPrefix = 'http://localhost:3000/production'
 
   //populate states for the dropdown
@@ -365,6 +365,10 @@ const Map = () => {
     
     setLoading(true)
 
+    console.log('csvUrl', csvUrl)
+    console.log('selectedUsState.stusps', selectedUsState.stusps)
+    console.log('dataDescription', dataDescription)
+
     fetch(`${apiPrefix}/getGeoJsonForCsv`,{
       method: 'POST',
       body: JSON.stringify({
@@ -374,11 +378,15 @@ const Map = () => {
       })
     })
     .then((res) => {
+      console.log('here1')
       res.json()
         .then(countiesPoints => setCountiesPointsGeoJSON(countiesPoints))
         .catch(error => console.log('error', error))
     })
-    .catch(error => console.log('error', error))
+    .catch(error => {
+      console.log('here2')
+      console.log('error', error)
+    })
   }
 
   const usStateChange = (stateAbbrev) => {
